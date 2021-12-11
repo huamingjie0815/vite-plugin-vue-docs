@@ -14,6 +14,7 @@ export interface Route {
   component: string;
   data?: RenderData | null;
   demo?: Demo | null;
+  code: string;
 }
 
 export interface Demo {
@@ -45,20 +46,20 @@ class DocsRoute {
     this.baseRoute = getBaseUrl(this.config);
     this.route = {};
     if (config.showUse) {
-      this.route = {
-        "@vite-plugin-vue-docs/readme": {
-          path: "",
-          name: "VueDocsReadme-使用说明",
-          file: config.templateDir + "/Readme.vue",
-          component: `() => import('${config.templateDir}/Readme.vue')`,
-        },
-        "@vite-plugin-vue-docs/changelog": {
-          path: "/@vite-plugin-vue-docs/changelog",
-          name: "VueDocsChangeLog-更新日志",
-          file: config.templateDir + "/ChangeLog.vue",
-          component: `() => import('${config.templateDir}/ChangeLog.vue')`,
-        },
-      };
+      // this.route = {
+      //   "@vite-plugin-vue-docs/readme": {
+      //     path: "",
+      //     name: "VueDocsReadme-使用说明",
+      //     file: config.templateDir + "/Readme.vue",
+      //     component: `() => import('${config.templateDir}/Readme.vue')`,
+      //   },
+      //   "@vite-plugin-vue-docs/changelog": {
+      //     path: "/@vite-plugin-vue-docs/changelog",
+      //     name: "VueDocsChangeLog-更新日志",
+      //     file: config.templateDir + "/ChangeLog.vue",
+      //     component: `() => import('${config.templateDir}/ChangeLog.vue')`,
+      //   },
+      // };
     }
   }
 
@@ -116,7 +117,7 @@ class DocsRoute {
     if (!routePath) return this.route;
 
     const routeName = this.getRouteNameByFile(file) || "";
-    const demoFile = file.replace(".vue", ".demo.vue");
+    // const demoFile = file.replace(".vue", ".demo.vue");
 
     const result = vueToJsonData(fs.readFileSync(file, "utf-8"));
 
@@ -126,24 +127,25 @@ class DocsRoute {
       file,
       component: "",
       data: result?.content,
+      code: fs.readFileSync(file, 'utf-8')
     };
 
-    if (fs.existsSync(demoFile)) {
-      route.demo = this.getRouteDemo(route, demoFile);
-      // debug.route("add demo %O", route.demo);
-    }
+    // if (fs.existsSync(demoFile)) {
+    //   route.demo = this.getRouteDemo(route, demoFile);
+    //   debug.route("add demo %O", route.demo);
+    // }
 
     const cacheDir = Cache.childFile(this.config, route);
 
     route.component = `() => import('${cacheDir}')`;
 
-    if (fs.existsSync(demoFile)) {
-      route.demo = {
-        file: demoFile,
-        name: toPascalCase(routeName + "-demo"),
-        code: fs.readFileSync(demoFile, "utf-8"),
-      };
-    }
+    // if (fs.existsSync(demoFile)) {
+    //   route.demo = {
+    //     file: demoFile,
+    //     name: toPascalCase(routeName + "-demo"),
+    //     code: fs.readFileSync(demoFile, "utf-8"),
+    //   };
+    // }
 
     this.route[routePath] = route;
     return this.route;
@@ -152,15 +154,15 @@ class DocsRoute {
   change(file: string): void {
     const routePath = this.getRoutePathByFile(file);
     if (!routePath || !this.route[routePath]) return;
-    const route = this.route[routePath];
-
-    if (file.includes(".demo.vue")) {
-      route.demo = this.getRouteDemo(route, file);
-    } else {
-      const result = vueToJsonData(fs.readFileSync(file, "utf-8"));
-      debug.route("change %O", this.route[routePath]);
-      this.route[routePath].data = result?.content;
-    }
+    // const route = this.route[routePath];
+    const result = vueToJsonData(fs.readFileSync(file, "utf-8"));
+    debug.route("change %O", this.route[routePath]);
+    this.route[routePath].data = result?.content;
+    // if (file.includes(".demo.vue")) {
+    //   route.demo = this.getRouteDemo(route, file);
+    // } else {
+      
+    // }
 
     Cache.childFile(this.config, this.route[routePath]);
   }
@@ -176,8 +178,8 @@ class DocsRoute {
 
   toClientCode(): string {
     const arr = [];
-    const demoImports = [];
-    const demoComponent = [];
+    const viewImports = [];
+    const viewComponent = [];
     for (const key in this.route) {
       const route = this.route[key];
       const json = {
@@ -189,12 +191,13 @@ class DocsRoute {
         },
       };
 
-      if (route.demo) {
-        const demoName = route.demo.name;
-        demoImports.push(`import ${demoName} from "${route.demo.file}"`);
-        demoComponent.push(`Vue.component('${demoName}', ${demoName})`);
-      }
-
+      // if (route.demo) {
+      //   const demoName = route.demo.name;
+      //   demoImports.push(`import ${demoName} from "${route.demo.file}"`);
+      //   demoComponent.push(`Vue.component('${demoName}', ${demoName})`);
+      // }
+      viewImports.push(`import ${route.name} from "${route.file}"`);
+      viewComponent.push(`Vue.component('${route.name}', ${route.name})`);
       arr.push(
         JSON.stringify(json).replace(/"\(\) => .*?\)"/, function (str) {
           return str.replace(/"/g, "");
@@ -210,32 +213,33 @@ class DocsRoute {
 
     Cache.createLayout(this.config, this);
 
-    debug.route("demo imports %O", demoImports);
-    debug.route("demo component %O", demoComponent);
+    // debug.route("demo imports %O", demoImports);
+    // debug.route("demo component %O", demoComponent);
 
     let code = `export const routes = ${layout.replace(/\s+|\n+/g, "")};\n`;
     code += `${
-      demoImports.length <= 1
-        ? demoImports.join(";") + ";\n"
-        : demoImports.join(";\n") + ";\n"
+      viewImports.length <= 1
+        ? viewImports.join(";") + ";\n"
+        : viewImports.join(";\n") + ";\n"
     }`;
 
-    debug.route(
-      "demo plugin",
-      `export function initVueDocsDemo(Vue) {${
-        demoComponent.length <= 1
-          ? demoComponent.join(",") + "\n"
-          : demoComponent.join(";\n")
-      }};`
-    );
+    // debug.route(
+    //   "demo plugin",
+    //   `export function initVueDocsDemo(Vue) {${
+    //     demoComponent.length <= 1
+    //       ? demoComponent.join(",") + "\n"
+    //       : demoComponent.join(";\n")
+    //   }};`
+    // );
 
     code += `export function initVueDocsDemo(Vue) {${
-      demoComponent.length <= 1
-        ? demoComponent.join(",") + "\n"
-        : demoComponent.join(";\n")
+      viewComponent.length <= 1
+        ? viewComponent.join(",") + "\n"
+        : viewComponent.join(";\n")
     }};`.replace(/\n+/g, "");
     code += `export default routes;`;
 
+    console.log(code)
     return code;
   }
 
@@ -267,12 +271,12 @@ class DocsRoute {
       }
     });
 
-    if (defaultRoute && defaultRoute.length > 0) {
-      navs.push({
-        title: "使用指南",
-        data: defaultRoute,
-      });
-    }
+    // if (defaultRoute && defaultRoute.length > 0) {
+    //   navs.push({
+    //     title: "使用指南",
+    //     data: defaultRoute,
+    //   });
+    // }
 
     const otherClassify: NavRoute = {
       title: "未分类组件",

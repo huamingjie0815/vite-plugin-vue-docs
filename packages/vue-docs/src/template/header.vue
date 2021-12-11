@@ -5,7 +5,7 @@
         <router-link class="van-doc-header__logo" to="/docs">
           <span>{{ header.title }} </span>
         </router-link>
-
+        <!-- 
         <ul class="van-doc-header__top-nav">
           <li class="van-doc-header__top-nav-item">
             <a
@@ -18,7 +18,7 @@
 
             <a class="van-doc-header__link"> 更新日志 </a>
           </li>
-        </ul>
+        </ul> -->
       </div>
     </div>
   </div>

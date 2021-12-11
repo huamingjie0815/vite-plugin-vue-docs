@@ -604,3 +604,17 @@
 .van-doc .van-doc-intro p {
   margin-bottom: 20px;
 }
+
+.van-doc-content .workspace {
+  
+}
+.van-doc-content .workspace .main {
+  
+}
+.van-doc-content .workspace .box {
+  
+}
+
+.slot-parent {
+  background-color: #eb6f6f;
+}

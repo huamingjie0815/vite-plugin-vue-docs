@@ -6,6 +6,7 @@ import { MODULE_NAME, MODULE_NAME_VIRTUAL } from "./constants";
 import path from "path";
 import { hmr } from "./hmr";
 import Cache from "./cache";
+import { debug } from "console";
 
 // 可自定义的配置
 export interface CustomConfig {
@@ -50,7 +51,7 @@ export default function vueDocs(rawOptions?: CustomConfig): Plugin {
 
   const config: Config = {
     base: "/docs",
-    componentDir: "/components",
+    componentDir: "/views",
     root: "",
     vueRoute: "router",
     fileExp: RegExp(""),

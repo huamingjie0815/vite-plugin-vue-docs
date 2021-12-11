@@ -58,9 +58,8 @@ function childFile(config: Config, route: Route): string {
     `result: ${JSON.stringify(route.data)}`
   );
 
-  if (route.demo) {
-    const demo = route.demo;
-    const demoCode = demo.code
+  if (route.code) {
+    const code = route.code
       ?.replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/{/g, "&#123;")
@@ -68,9 +67,8 @@ function childFile(config: Config, route: Route): string {
     cacheData = cacheData.replace(
       `<!-- @vite-plugin-vue-docs content template demo -->`,
       `<div class="card">
-      <h3>Demo</h3>
-      <${demo.name} />
-      <pre v-highlightjs v-show="showSourceCode"><code class="language-js">${demoCode}</code></pre>
+      <${route.name} />
+      <pre v-highlightjs v-show="showSourceCode"><code class="language-js">${code}</code></pre>
       <div class="source-code">
         <p style="text-align: center">
             <span style="cursor: pointer" @click="showSourceCode=!showSourceCode">
